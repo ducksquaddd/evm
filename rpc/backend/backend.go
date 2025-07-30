@@ -16,6 +16,7 @@ import (
 	tmrpcclient "github.com/cometbft/cometbft/rpc/client"
 	tmrpctypes "github.com/cometbft/cometbft/rpc/core/types"
 
+	cmn "github.com/cosmos/evm/precompiles/common"
 	rpctypes "github.com/cosmos/evm/rpc/types"
 	"github.com/cosmos/evm/server/config"
 	cosmosevmtypes "github.com/cosmos/evm/types"
@@ -137,6 +138,7 @@ type Backend struct {
 	cfg                 config.Config
 	allowUnprotectedTxs bool
 	indexer             cosmosevmtypes.EVMTxIndexer
+	bankKeeper          cmn.BankKeeper // ELYS MODIFICATION: Add bank keeper for balance queries
 }
 
 func (b *Backend) GetConfig() config.Config {
@@ -144,12 +146,14 @@ func (b *Backend) GetConfig() config.Config {
 }
 
 // NewBackend creates a new Backend instance for cosmos and ethereum namespaces
+// ELYS MODIFICATION: Added bankKeeper parameter for balance queries
 func NewBackend(
 	ctx *server.Context,
 	logger log.Logger,
 	clientCtx client.Context,
 	allowUnprotectedTxs bool,
 	indexer cosmosevmtypes.EVMTxIndexer,
+	bankKeeper cmn.BankKeeper,
 ) *Backend {
 	appConf, err := config.GetConfig(ctx.Viper)
 	if err != nil {
@@ -171,5 +175,6 @@ func NewBackend(
 		cfg:                 appConf,
 		allowUnprotectedTxs: allowUnprotectedTxs,
 		indexer:             indexer,
+		bankKeeper:          bankKeeper, // ELYS MODIFICATION: Store bank keeper
 	}
 }

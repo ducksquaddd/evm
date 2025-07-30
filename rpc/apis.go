@@ -61,7 +61,9 @@ func init() {
 			allowUnprotectedTxs bool,
 			indexer types.EVMTxIndexer,
 		) []rpc.API {
-			evmBackend := backend.NewBackend(ctx, ctx.Logger, clientCtx, allowUnprotectedTxs, indexer)
+			// ELYS MODIFICATION: TODO - Replace nil with actual bankKeeper from your application
+			// Example: evmBackend := backend.NewBackend(ctx, ctx.Logger, clientCtx, allowUnprotectedTxs, indexer, app.BankKeeper)
+			evmBackend := backend.NewBackend(ctx, ctx.Logger, clientCtx, allowUnprotectedTxs, indexer, nil)
 			return []rpc.API{
 				{
 					Namespace: EthNamespace,
@@ -103,7 +105,9 @@ func init() {
 			allowUnprotectedTxs bool,
 			indexer types.EVMTxIndexer,
 		) []rpc.API {
-			evmBackend := backend.NewBackend(ctx, ctx.Logger, clientCtx, allowUnprotectedTxs, indexer)
+			// ELYS MODIFICATION: TODO - Replace nil with actual bankKeeper from your application
+			// Example: evmBackend := backend.NewBackend(ctx, ctx.Logger, clientCtx, allowUnprotectedTxs, indexer, app.BankKeeper)
+			evmBackend := backend.NewBackend(ctx, ctx.Logger, clientCtx, allowUnprotectedTxs, indexer, nil)
 			return []rpc.API{
 				{
 					Namespace: PersonalNamespace,
@@ -129,7 +133,9 @@ func init() {
 			allowUnprotectedTxs bool,
 			indexer types.EVMTxIndexer,
 		) []rpc.API {
-			evmBackend := backend.NewBackend(ctx, ctx.Logger, clientCtx, allowUnprotectedTxs, indexer)
+			// ELYS MODIFICATION: TODO - Replace nil with actual bankKeeper from your application
+			// Example: evmBackend := backend.NewBackend(ctx, ctx.Logger, clientCtx, allowUnprotectedTxs, indexer, app.BankKeeper)
+			evmBackend := backend.NewBackend(ctx, ctx.Logger, clientCtx, allowUnprotectedTxs, indexer, nil)
 			return []rpc.API{
 				{
 					Namespace: DebugNamespace,
@@ -145,7 +151,9 @@ func init() {
 			allowUnprotectedTxs bool,
 			indexer types.EVMTxIndexer,
 		) []rpc.API {
-			evmBackend := backend.NewBackend(ctx, ctx.Logger, clientCtx, allowUnprotectedTxs, indexer)
+			// ELYS MODIFICATION: TODO - Replace nil with actual bankKeeper from your application
+			// Example: evmBackend := backend.NewBackend(ctx, ctx.Logger, clientCtx, allowUnprotectedTxs, indexer, app.BankKeeper)
+			evmBackend := backend.NewBackend(ctx, ctx.Logger, clientCtx, allowUnprotectedTxs, indexer, nil)
 			return []rpc.API{
 				{
 					Namespace: MinerNamespace,

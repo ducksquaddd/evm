@@ -2,6 +2,7 @@ package backend
 
 import (
 	"bufio"
+	"context"
 	"math/big"
 	"os"
 	"path/filepath"
@@ -29,7 +30,23 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 )
+
+// ELYS MODIFICATION: Mock BankKeeper for testing
+type MockBankKeeper struct{}
+
+func (m *MockBankKeeper) IterateAccountBalances(ctx context.Context, account sdk.AccAddress, cb func(coin sdk.Coin) bool) {}
+func (m *MockBankKeeper) IterateTotalSupply(ctx context.Context, cb func(coin sdk.Coin) bool) {}
+func (m *MockBankKeeper) GetSupply(ctx context.Context, denom string) sdk.Coin { return sdk.NewInt64Coin(denom, 0) }
+func (m *MockBankKeeper) GetDenomMetaData(ctx context.Context, denom string) (banktypes.Metadata, bool) { return banktypes.Metadata{}, false }
+func (m *MockBankKeeper) SetDenomMetaData(ctx context.Context, denomMetaData banktypes.Metadata) {}
+func (m *MockBankKeeper) GetBalance(ctx context.Context, addr sdk.AccAddress, denom string) sdk.Coin {
+	// Return a mock balance for testing
+	return sdk.NewInt64Coin(denom, 1000000)
+}
+func (m *MockBankKeeper) SendCoins(ctx context.Context, fromAddr sdk.AccAddress, toAddr sdk.AccAddress, amt sdk.Coins) error { return nil }
+func (m *MockBankKeeper) SpendableCoin(ctx context.Context, addr sdk.AccAddress, denom string) sdk.Coin { return sdk.NewInt64Coin(denom, 1000000) }
 
 type BackendTestSuite struct {
 	suite.Suite
@@ -86,7 +103,9 @@ func (suite *BackendTestSuite) SetupTest() {
 	allowUnprotectedTxs := false
 	idxer := indexer.NewKVIndexer(dbm.NewMemDB(), ctx.Logger, clientCtx)
 
-	suite.backend = NewBackend(ctx, ctx.Logger, clientCtx, allowUnprotectedTxs, idxer)
+	// ELYS MODIFICATION: Add mock bank keeper for tests
+	mockBankKeeper := &MockBankKeeper{}
+	suite.backend = NewBackend(ctx, ctx.Logger, clientCtx, allowUnprotectedTxs, idxer, mockBankKeeper)
 	suite.backend.cfg.JSONRPC.GasCap = 0
 	suite.backend.cfg.JSONRPC.EVMTimeout = 0
 	suite.backend.cfg.JSONRPC.AllowInsecureUnlock = true

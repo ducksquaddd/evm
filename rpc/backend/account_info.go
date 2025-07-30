@@ -145,14 +145,11 @@ func (b *Backend) GetStorageAt(address common.Address, key string, blockNrOrHash
 }
 
 // GetBalance returns the provided account's *spendable* balance up to the provided block number.
+// ELYS MODIFICATION: Use bank module instead of EVM state for native token balance
 func (b *Backend) GetBalance(address common.Address, blockNrOrHash rpctypes.BlockNumberOrHash) (*hexutil.Big, error) {
 	blockNum, err := b.BlockNumberFromTendermint(blockNrOrHash)
 	if err != nil {
 		return nil, err
-	}
-
-	req := &evmtypes.QueryBalanceRequest{
-		Address: address.String(),
 	}
 
 	_, err = b.TendermintBlockByNumber(blockNum)
@@ -160,7 +157,31 @@ func (b *Backend) GetBalance(address common.Address, blockNrOrHash rpctypes.Bloc
 		return nil, err
 	}
 
-	res, err := b.queryClient.Balance(rpctypes.ContextWithHeight(blockNum.Int64()), req)
+	// ELYS MODIFICATION: Use bank module instead of EVM state
+	// Convert Ethereum address to Cosmos address (same as bank precompile)
+	cosmosAddr := sdk.AccAddress(address.Bytes())
+
+	// Create context with the correct height for the query
+	ctx := rpctypes.ContextWithHeight(blockNum.Int64())
+
+	// Check if bankKeeper is available (for proper integration)
+	if b.bankKeeper != nil {
+		// Query bank module for aatom balance (single source of truth)
+		balance := b.bankKeeper.GetBalance(ctx, cosmosAddr, "aatom")
+		val := balance.Amount
+		if val.IsNegative() {
+			return nil, errors.New("couldn't fetch balance. Node state is pruned")
+		}
+		return (*hexutil.Big)(val.BigInt()), nil
+	}
+
+	// Fallback to original EVM state query if bankKeeper not available
+	// TODO: Remove this fallback once bankKeeper is properly integrated
+	req := &evmtypes.QueryBalanceRequest{
+		Address: address.String(),
+	}
+
+	res, err := b.queryClient.Balance(ctx, req)
 	if err != nil {
 		return nil, err
 	}
