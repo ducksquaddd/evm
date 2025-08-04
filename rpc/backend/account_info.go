@@ -147,59 +147,54 @@ func (b *Backend) GetStorageAt(address common.Address, key string, blockNrOrHash
 // GetBalance returns the provided account's *spendable* balance up to the provided block number.
 // ELYS MODIFICATION: Use bank module instead of EVM state for native token balance
 func (b *Backend) GetBalance(address common.Address, blockNrOrHash rpctypes.BlockNumberOrHash) (*hexutil.Big, error) {
-	blockNum, err := b.BlockNumberFromTendermint(blockNrOrHash)
-	if err != nil {
-		return nil, err
-	}
+    // Add debug logging
+    fmt.Printf("🔍 GetBalance called for address: %s\n", address.Hex())
+    
+    blockNum, err := b.BlockNumberFromTendermint(blockNrOrHash)
+    if err != nil {
+        fmt.Printf("❌ BlockNumberFromTendermint error: %v\n", err)
+        return nil, err
+    }
 
-	_, err = b.TendermintBlockByNumber(blockNum)
-	if err != nil {
-		return nil, err
-	}
+    _, err = b.TendermintBlockByNumber(blockNum)
+    if err != nil {
+        fmt.Printf("❌ TendermintBlockByNumber error: %v\n", err)
+        return nil, err
+    }
 
-	// ELYS MODIFICATION: Use bank module instead of EVM state
-	// Convert Ethereum address to Cosmos address (same as bank precompile)
-	cosmosAddr := sdk.AccAddress(address.Bytes())
+    // Check if bankKeeper is available
+    if b.bankKeeper == nil {
+        fmt.Printf("⚠️ bankKeeper is nil, falling back to EVM state\n")
+        // Fallback to original implementation
+        // ... original EVM state query code
+    }
 
-	// Create context with the correct height for the query
-	rpcCtx := rpctypes.ContextWithHeight(blockNum.Int64())
+    // Check if baseDenom is available
+    if b.baseDenom == "" {
+        fmt.Printf("⚠️ baseDenom is empty, using default 'uelys'\n")
+        b.baseDenom = "uelys"
+    }
 
-	// Check if bankKeeper is available (for proper integration)
-	if b.bankKeeper != nil {
-		// Use the configured base denomination
-		baseDenom := b.baseDenom
+    fmt.Printf("✅ Using bankKeeper with baseDenom: %s\n", b.baseDenom)
 
-		// Query bank module for native token balance (single source of truth)
-		balance := b.bankKeeper.GetBalance(rpcCtx, cosmosAddr, baseDenom)
-		val := balance.Amount
-		if val.IsNegative() {
-			return nil, errors.New("couldn't fetch balance. Node state is pruned")
-		}
-		return (*hexutil.Big)(val.BigInt()), nil
-	}
+    // Convert Ethereum address to Cosmos address
+    cosmosAddr := sdk.AccAddress(address.Bytes())
+    fmt.Printf("✅ Converted to cosmos address: %s\n", cosmosAddr.String())
 
-	// Fallback to original EVM state query if bankKeeper not available
-	// TODO: Remove this fallback once bankKeeper is properly integrated
-	req := &evmtypes.QueryBalanceRequest{
-		Address: address.String(),
-	}
+    // Create context with the correct height
+    rpcCtx := rpctypes.ContextWithHeight(blockNum.Int64())
 
-	res, err := b.queryClient.Balance(rpcCtx, req)
-	if err != nil {
-		return nil, err
-	}
+    // Query bank module for native token balance
+    balance := b.bankKeeper.GetBalance(rpcCtx, cosmosAddr, b.baseDenom)
+    val := balance.Amount
+    
+    fmt.Printf("✅ Bank balance found: %s %s\n", val.String(), b.baseDenom)
 
-	val, ok := sdkmath.NewIntFromString(res.Balance)
-	if !ok {
-		return nil, errors.New("invalid balance")
-	}
+    if val.IsNegative() {
+        return nil, errors.New("couldn't fetch balance. Node state is pruned")
+    }
 
-	// balance can only be negative in case of pruned node
-	if val.IsNegative() {
-		return nil, errors.New("couldn't fetch balance. Node state is pruned")
-	}
-
-	return (*hexutil.Big)(val.BigInt()), nil
+    return (*hexutil.Big)(val.BigInt()), nil
 }
 
 // GetTransactionCount returns the number of transactions at the given address up to the given block number.
