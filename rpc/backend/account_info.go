@@ -162,12 +162,12 @@ func (b *Backend) GetBalance(address common.Address, blockNrOrHash rpctypes.Bloc
 	cosmosAddr := sdk.AccAddress(address.Bytes())
 
 	// Create context with the correct height for the query
-	ctx := rpctypes.ContextWithHeight(blockNum.Int64())
+	rpcCtx := rpctypes.ContextWithHeight(blockNum.Int64())
 
 	// Check if bankKeeper is available (for proper integration)
 	if b.bankKeeper != nil {
-		// Query bank module for aatom balance (single source of truth)
-		balance := b.bankKeeper.GetBalance(ctx, cosmosAddr, "aatom")
+		// Query bank module for uelys balance (single source of truth)
+		balance := b.bankKeeper.GetBalance(rpcCtx, cosmosAddr, "uelys")
 		val := balance.Amount
 		if val.IsNegative() {
 			return nil, errors.New("couldn't fetch balance. Node state is pruned")
@@ -181,7 +181,7 @@ func (b *Backend) GetBalance(address common.Address, blockNrOrHash rpctypes.Bloc
 		Address: address.String(),
 	}
 
-	res, err := b.queryClient.Balance(ctx, req)
+	res, err := b.queryClient.Balance(rpcCtx, req)
 	if err != nil {
 		return nil, err
 	}
