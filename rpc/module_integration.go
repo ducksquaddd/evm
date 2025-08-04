@@ -1,6 +1,8 @@
 package rpc
 
 import (
+	"fmt"
+
 	cmn "github.com/cosmos/evm/precompiles/common"
 )
 
@@ -13,11 +15,26 @@ import (
 //	// After BankKeeper is initialized
 //	rpc.SetupEVMRPC(app.BankKeeper)
 //
-func SetupEVMRPC(bankKeeper cmn.BankKeeper) {
+// SetupEVMRPC configures the EVM RPC with bank keeper and base denomination
+// ELYS MODIFICATION: Enhanced to accept base denomination for proper configuration
+func SetupEVMRPC(bankKeeper cmn.BankKeeper, baseDenom string) error {
+	// Validate inputs
+	if bankKeeper == nil {
+		return fmt.Errorf("bank keeper cannot be nil")
+	}
+	
+	if baseDenom == "" {
+		return fmt.Errorf("base denomination cannot be empty")
+	}
+	
+	// Set the global RPC configuration
 	config := &RPCConfig{
 		BankKeeper: bankKeeper,
+		BaseDenom:  baseDenom,
 	}
+	
 	SetRPCConfig(config)
+	return nil
 }
 
 // Alternative: SetupEVMRPCWithConfig allows for more advanced configuration

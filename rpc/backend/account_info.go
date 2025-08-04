@@ -166,8 +166,11 @@ func (b *Backend) GetBalance(address common.Address, blockNrOrHash rpctypes.Bloc
 
 	// Check if bankKeeper is available (for proper integration)
 	if b.bankKeeper != nil {
-		// Query bank module for uelys balance (single source of truth)
-		balance := b.bankKeeper.GetBalance(rpcCtx, cosmosAddr, "uelys")
+		// Use the configured base denomination
+		baseDenom := b.baseDenom
+
+		// Query bank module for native token balance (single source of truth)
+		balance := b.bankKeeper.GetBalance(rpcCtx, cosmosAddr, baseDenom)
 		val := balance.Amount
 		if val.IsNegative() {
 			return nil, errors.New("couldn't fetch balance. Node state is pruned")

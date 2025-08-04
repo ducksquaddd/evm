@@ -105,7 +105,7 @@ func (suite *BackendTestSuite) SetupTest() {
 
 	// ELYS MODIFICATION: Add mock bank keeper for tests
 	mockBankKeeper := &MockBankKeeper{}
-	suite.backend = NewBackend(ctx, ctx.Logger, clientCtx, allowUnprotectedTxs, idxer, mockBankKeeper)
+	suite.backend = NewBackend(ctx, ctx.Logger, clientCtx, allowUnprotectedTxs, idxer, mockBankKeeper, "uelys")
 	suite.backend.cfg.JSONRPC.GasCap = 0
 	suite.backend.cfg.JSONRPC.EVMTimeout = 0
 	suite.backend.cfg.JSONRPC.AllowInsecureUnlock = true

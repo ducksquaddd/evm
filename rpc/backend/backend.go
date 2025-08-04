@@ -139,6 +139,7 @@ type Backend struct {
 	allowUnprotectedTxs bool
 	indexer             cosmosevmtypes.EVMTxIndexer
 	bankKeeper          cmn.BankKeeper // ELYS MODIFICATION: Add bank keeper for balance queries
+	baseDenom           string         // ELYS MODIFICATION: Add base denomination for balance queries
 }
 
 func (b *Backend) GetConfig() config.Config {
@@ -146,7 +147,7 @@ func (b *Backend) GetConfig() config.Config {
 }
 
 // NewBackend creates a new Backend instance for cosmos and ethereum namespaces
-// ELYS MODIFICATION: Added bankKeeper parameter for balance queries
+// ELYS MODIFICATION: Added bankKeeper and baseDenom parameters for balance queries
 func NewBackend(
 	ctx *server.Context,
 	logger log.Logger,
@@ -154,6 +155,7 @@ func NewBackend(
 	allowUnprotectedTxs bool,
 	indexer cosmosevmtypes.EVMTxIndexer,
 	bankKeeper cmn.BankKeeper,
+	baseDenom string,
 ) *Backend {
 	appConf, err := config.GetConfig(ctx.Viper)
 	if err != nil {
@@ -176,5 +178,6 @@ func NewBackend(
 		allowUnprotectedTxs: allowUnprotectedTxs,
 		indexer:             indexer,
 		bankKeeper:          bankKeeper, // ELYS MODIFICATION: Store bank keeper
+		baseDenom:           baseDenom,  // ELYS MODIFICATION: Store base denomination
 	}
 }
