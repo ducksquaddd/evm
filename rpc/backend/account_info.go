@@ -200,14 +200,22 @@ func (b *Backend) GetBalance(address common.Address, blockNrOrHash rpctypes.Bloc
     
     fmt.Printf("✅ Using context with height: %d\n", blockNum.Int64())
     fmt.Printf("🔍 About to call GetBalance on bank keeper...\n")
-
-    // Query bank module for native token balance
+    
+    // Try direct keeper call with panic recovery
+    var val sdkmath.Int
+    
+    // Attempt direct keeper call with panic recovery
+    defer func() {
+        if r := recover(); r != nil {
+            fmt.Printf("⚠️ Direct keeper call panicked: %v\n", r)
+            // TODO: Implement gRPC fallback here if needed
+        }
+    }()
+    
+    // Try the direct keeper approach
     balance := b.bankKeeper.GetBalance(queryCtx, cosmosAddr, b.baseDenom)
-    
-    fmt.Printf("✅ GetBalance call completed\n")
-    val := balance.Amount
-    
-    fmt.Printf("✅ Bank balance found: %s %s\n", val.String(), b.baseDenom)
+    val = balance.Amount
+    fmt.Printf("✅ Direct bank keeper call successful: %s %s\n", val.String(), b.baseDenom)
 
     if val.IsNegative() {
         return nil, errors.New("couldn't fetch balance. Node state is pruned")
