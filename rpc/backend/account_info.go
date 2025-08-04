@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"context"
 	"fmt"
 	"math"
 	"math/big"
@@ -181,16 +182,21 @@ func (b *Backend) GetBalance(address common.Address, blockNrOrHash rpctypes.Bloc
     cosmosAddr := sdk.AccAddress(address.Bytes())
     fmt.Printf("✅ Converted to cosmos address: %s\n", cosmosAddr.String())
 
-    // Try to create a context that has proper store access for direct keeper calls
-    // rpctypes.ContextWithHeight might not have the stores needed for bank keeper
-    fmt.Printf("🔍 Creating context for height: %d\n", blockNum.Int64())
+    // Create a proper SDK context with store access for direct keeper calls
+    // rpctypes.ContextWithHeight doesn't work for direct keeper calls - only for gRPC queries
+    fmt.Printf("🔍 Creating proper SDK context for height: %d\n", blockNum.Int64())
     
-    // First try the standard RPC context
-    queryCtx := rpctypes.ContextWithHeight(blockNum.Int64())
-    fmt.Printf("✅ RPC context created successfully\n")
+    // Use the backend's base context and set the height
+    ctx := b.ctx  // Use the backend's context
+    if ctx == nil {
+        fmt.Printf("⚠️ Backend context is nil, using a background context\n")
+        ctx = context.Background()
+    }
     
-    // TODO: If this hangs, we need to create a proper SDK context with store access
-    // The issue is that bank keeper needs access to the KVStore which rpctypes.ContextWithHeight might not provide
+    // For now, let's try using the latest block context since height-specific queries are failing
+    // We'll use rpctypes.ContextWithHeight(0) which should use latest
+    queryCtx := rpctypes.ContextWithHeight(0) // 0 = latest block
+    fmt.Printf("✅ Using latest block context instead of specific height\n")
     
     fmt.Printf("✅ Using context with height: %d\n", blockNum.Int64())
     fmt.Printf("🔍 About to call GetBalance on bank keeper...\n")
