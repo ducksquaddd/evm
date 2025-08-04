@@ -42,6 +42,7 @@ const (
 )
 
 // APICreator creates the JSON-RPC API implementations.
+// ELYS MODIFICATION: Uses global RPC configuration for clean module integration
 type APICreator = func(
 	ctx *server.Context,
 	clientCtx client.Context,
@@ -61,9 +62,8 @@ func init() {
 			allowUnprotectedTxs bool,
 			indexer types.EVMTxIndexer,
 		) []rpc.API {
-			// ELYS MODIFICATION: TODO - Replace nil with actual bankKeeper from your application
-			// Example: evmBackend := backend.NewBackend(ctx, ctx.Logger, clientCtx, allowUnprotectedTxs, indexer, app.BankKeeper)
-			evmBackend := backend.NewBackend(ctx, ctx.Logger, clientCtx, allowUnprotectedTxs, indexer, nil)
+			// ELYS MODIFICATION: Use global RPC configuration for clean module integration
+			evmBackend := backend.NewBackend(ctx, ctx.Logger, clientCtx, allowUnprotectedTxs, indexer, GetBankKeeper())
 			return []rpc.API{
 				{
 					Namespace: EthNamespace,
@@ -105,9 +105,8 @@ func init() {
 			allowUnprotectedTxs bool,
 			indexer types.EVMTxIndexer,
 		) []rpc.API {
-			// ELYS MODIFICATION: TODO - Replace nil with actual bankKeeper from your application
-			// Example: evmBackend := backend.NewBackend(ctx, ctx.Logger, clientCtx, allowUnprotectedTxs, indexer, app.BankKeeper)
-			evmBackend := backend.NewBackend(ctx, ctx.Logger, clientCtx, allowUnprotectedTxs, indexer, nil)
+			// ELYS MODIFICATION: Use global RPC configuration
+			evmBackend := backend.NewBackend(ctx, ctx.Logger, clientCtx, allowUnprotectedTxs, indexer, GetBankKeeper())
 			return []rpc.API{
 				{
 					Namespace: PersonalNamespace,
@@ -133,9 +132,8 @@ func init() {
 			allowUnprotectedTxs bool,
 			indexer types.EVMTxIndexer,
 		) []rpc.API {
-			// ELYS MODIFICATION: TODO - Replace nil with actual bankKeeper from your application
-			// Example: evmBackend := backend.NewBackend(ctx, ctx.Logger, clientCtx, allowUnprotectedTxs, indexer, app.BankKeeper)
-			evmBackend := backend.NewBackend(ctx, ctx.Logger, clientCtx, allowUnprotectedTxs, indexer, nil)
+			// ELYS MODIFICATION: Use global RPC configuration
+			evmBackend := backend.NewBackend(ctx, ctx.Logger, clientCtx, allowUnprotectedTxs, indexer, GetBankKeeper())
 			return []rpc.API{
 				{
 					Namespace: DebugNamespace,
@@ -151,9 +149,8 @@ func init() {
 			allowUnprotectedTxs bool,
 			indexer types.EVMTxIndexer,
 		) []rpc.API {
-			// ELYS MODIFICATION: TODO - Replace nil with actual bankKeeper from your application
-			// Example: evmBackend := backend.NewBackend(ctx, ctx.Logger, clientCtx, allowUnprotectedTxs, indexer, app.BankKeeper)
-			evmBackend := backend.NewBackend(ctx, ctx.Logger, clientCtx, allowUnprotectedTxs, indexer, nil)
+			// ELYS MODIFICATION: Use global RPC configuration
+			evmBackend := backend.NewBackend(ctx, ctx.Logger, clientCtx, allowUnprotectedTxs, indexer, GetBankKeeper())
 			return []rpc.API{
 				{
 					Namespace: MinerNamespace,
@@ -167,6 +164,7 @@ func init() {
 }
 
 // GetRPCAPIs returns the list of all APIs
+// ELYS MODIFICATION: Uses global RPC configuration for clean module integration
 func GetRPCAPIs(ctx *server.Context,
 	clientCtx client.Context,
 	tmWSClient *rpcclient.WSClient,
@@ -178,6 +176,7 @@ func GetRPCAPIs(ctx *server.Context,
 
 	for _, ns := range selectedAPIs {
 		if creator, ok := apiCreators[ns]; ok {
+			// ELYS MODIFICATION: Creator functions use global RPC configuration
 			apis = append(apis, creator(ctx, clientCtx, tmWSClient, allowUnprotectedTxs, indexer)...)
 		} else {
 			ctx.Logger.Error("invalid namespace value", "namespace", ns)
