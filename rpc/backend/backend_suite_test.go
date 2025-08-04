@@ -105,7 +105,11 @@ func (suite *BackendTestSuite) SetupTest() {
 
 	// ELYS MODIFICATION: Add mock bank keeper for tests
 	mockBankKeeper := &MockBankKeeper{}
-	suite.backend = NewBackend(ctx, ctx.Logger, clientCtx, allowUnprotectedTxs, idxer, mockBankKeeper, "uelys")
+	// Mock query context factory for tests - returns empty context for testing
+	mockCtxFactory := func(height int64) sdk.Context {
+		return sdk.Context{} // Empty context for tests
+	}
+	suite.backend = NewBackend(ctx, ctx.Logger, clientCtx, allowUnprotectedTxs, idxer, mockBankKeeper, "uelys", mockCtxFactory)
 	suite.backend.cfg.JSONRPC.GasCap = 0
 	suite.backend.cfg.JSONRPC.EVMTimeout = 0
 	suite.backend.cfg.JSONRPC.AllowInsecureUnlock = true

@@ -181,24 +181,43 @@ func (b *Backend) GetBalance(address common.Address, blockNrOrHash rpctypes.Bloc
     cosmosAddr := sdk.AccAddress(address.Bytes())
     fmt.Printf("✅ Converted to cosmos address: %s\n", cosmosAddr.String())
 
-    	// The key fix: Use the backend's clientCtx to get a proper SDK context
-	fmt.Printf("🔍 Creating proper SDK context...\n")
+    	// Direct keeper call with proper SDK context (no gRPC overhead)
+	fmt.Printf("🔍 Creating query context for height: %d\n", blockNum.Int64())
 	
-	// Create a context with height for gRPC queries
-	grpcCtx := rpctypes.ContextWithHeight(blockNum.Int64())
+	// Use the secure context factory to create a read-only SDK context
+	if b.queryCtxFactory == nil {
+		fmt.Printf("⚠️ queryCtxFactory is nil, falling back to EVM state query\n")
+		// Fallback to original EVM state query
+		req := &evmtypes.QueryBalanceRequest{
+			Address: address.String(),
+		}
+		
+		grpcCtx := rpctypes.ContextWithHeight(blockNum.Int64())
+		res, err := b.queryClient.Balance(grpcCtx, req)
+		if err != nil {
+			return nil, err
+		}
+		
+		val, ok := sdkmath.NewIntFromString(res.Balance)
+		if !ok {
+			return nil, errors.New("invalid balance")
+		}
+		
+		if val.IsNegative() {
+			return nil, errors.New("couldn't fetch balance. Node state is pruned")
+		}
+		
+		return (*hexutil.Big)(val.BigInt()), nil
+	}
 	
-	// Extract the SDK context from the gRPC context
-	// This is the same pattern used in gRPC query handlers
-	ctx := sdk.UnwrapSDKContext(grpcCtx)
+	// Create proper SDK context for the specific height
+	queryCtx := b.queryCtxFactory(blockNum.Int64())
+	fmt.Printf("✅ Created SDK context for direct keeper call\n")
 	
-	fmt.Printf("✅ Created SDK context with height: %d\n", blockNum.Int64())
-	fmt.Printf("🔍 About to call GetBalance on bank keeper...\n")
-
-	// Query bank module for native token balance
-	balance := b.bankKeeper.GetBalance(ctx, cosmosAddr, b.baseDenom)
+	// Direct bank keeper call (fast, no gRPC overhead)
+	balance := b.bankKeeper.GetBalance(queryCtx, cosmosAddr, b.baseDenom)
 	val := balance.Amount
-	
-	fmt.Printf("✅ Bank balance found: %s %s\n", val.String(), b.baseDenom)
+	fmt.Printf("✅ Bank balance found via direct keeper call: %s %s\n", val.String(), b.baseDenom)
 
     if val.IsNegative() {
         return nil, errors.New("couldn't fetch balance. Node state is pruned")

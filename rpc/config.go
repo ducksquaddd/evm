@@ -2,7 +2,11 @@ package rpc
 
 import (
 	cmn "github.com/cosmos/evm/precompiles/common"
+	"github.com/cosmos/evm/rpc/backend"
 )
+
+// QueryContextFactory is an alias to avoid circular imports
+type QueryContextFactory = backend.QueryContextFactory
 
 // RPCConfig holds the configuration and dependencies for the JSON-RPC server
 // ELYS MODIFICATION: Added to allow clean module integration
@@ -11,6 +15,8 @@ type RPCConfig struct {
 	BankKeeper cmn.BankKeeper
 	// BaseDenom is the native token denomination (e.g., "uelys")
 	BaseDenom string
+	// QueryContextFactory creates SDK contexts for direct keeper calls
+	QueryContextFactory QueryContextFactory
 }
 
 // Global RPC configuration instance
@@ -43,6 +49,14 @@ func GetBaseDenom() string {
 		return globalRPCConfig.BaseDenom
 	}
 	return "uelys" // Default fallback
+}
+
+// GetQueryContextFactory returns the configured query context factory or nil if not set
+func GetQueryContextFactory() QueryContextFactory {
+	if globalRPCConfig != nil {
+		return globalRPCConfig.QueryContextFactory
+	}
+	return nil
 }
 
 // IsConfigured returns true if the RPC system has been properly configured

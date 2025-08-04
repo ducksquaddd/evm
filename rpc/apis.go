@@ -63,7 +63,7 @@ func init() {
 			indexer types.EVMTxIndexer,
 		) []rpc.API {
 			// ELYS MODIFICATION: Use global RPC configuration for clean module integration
-			evmBackend := backend.NewBackend(ctx, ctx.Logger, clientCtx, allowUnprotectedTxs, indexer, GetBankKeeper(), GetBaseDenom())
+			evmBackend := backend.NewBackend(ctx, ctx.Logger, clientCtx, allowUnprotectedTxs, indexer, GetBankKeeper(), GetBaseDenom(), GetQueryContextFactory())
 			return []rpc.API{
 				{
 					Namespace: EthNamespace,
@@ -106,7 +106,7 @@ func init() {
 			indexer types.EVMTxIndexer,
 		) []rpc.API {
 			// ELYS MODIFICATION: Use global RPC configuration
-			evmBackend := backend.NewBackend(ctx, ctx.Logger, clientCtx, allowUnprotectedTxs, indexer, GetBankKeeper(), GetBaseDenom())
+			evmBackend := backend.NewBackend(ctx, ctx.Logger, clientCtx, allowUnprotectedTxs, indexer, GetBankKeeper(), GetBaseDenom(), GetQueryContextFactory())
 			return []rpc.API{
 				{
 					Namespace: PersonalNamespace,
@@ -133,7 +133,7 @@ func init() {
 			indexer types.EVMTxIndexer,
 		) []rpc.API {
 			// ELYS MODIFICATION: Use global RPC configuration
-			evmBackend := backend.NewBackend(ctx, ctx.Logger, clientCtx, allowUnprotectedTxs, indexer, GetBankKeeper(), GetBaseDenom())
+			evmBackend := backend.NewBackend(ctx, ctx.Logger, clientCtx, allowUnprotectedTxs, indexer, GetBankKeeper(), GetBaseDenom(), GetQueryContextFactory())
 			return []rpc.API{
 				{
 					Namespace: DebugNamespace,
@@ -150,7 +150,7 @@ func init() {
 			indexer types.EVMTxIndexer,
 		) []rpc.API {
 			// ELYS MODIFICATION: Use global RPC configuration
-			evmBackend := backend.NewBackend(ctx, ctx.Logger, clientCtx, allowUnprotectedTxs, indexer, GetBankKeeper(), GetBaseDenom())
+			evmBackend := backend.NewBackend(ctx, ctx.Logger, clientCtx, allowUnprotectedTxs, indexer, GetBankKeeper(), GetBaseDenom(), GetQueryContextFactory())
 			return []rpc.API{
 				{
 					Namespace: MinerNamespace,

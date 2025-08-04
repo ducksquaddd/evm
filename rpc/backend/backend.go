@@ -127,6 +127,9 @@ type EVMBackend interface {
 
 var _ BackendI = (*Backend)(nil)
 
+// QueryContextFactory creates SDK contexts for read-only queries at specific heights
+type QueryContextFactory func(height int64) sdk.Context
+
 // Backend implements the BackendI interface
 type Backend struct {
 	ctx                 context.Context
@@ -140,6 +143,7 @@ type Backend struct {
 	indexer             cosmosevmtypes.EVMTxIndexer
 	bankKeeper          cmn.BankKeeper // ELYS MODIFICATION: Add bank keeper for balance queries
 	baseDenom           string         // ELYS MODIFICATION: Add base denomination for balance queries
+	queryCtxFactory     QueryContextFactory // ELYS MODIFICATION: Factory for creating query contexts
 }
 
 func (b *Backend) GetConfig() config.Config {
@@ -147,7 +151,7 @@ func (b *Backend) GetConfig() config.Config {
 }
 
 // NewBackend creates a new Backend instance for cosmos and ethereum namespaces
-// ELYS MODIFICATION: Added bankKeeper and baseDenom parameters for balance queries
+// ELYS MODIFICATION: Added bankKeeper, baseDenom, and queryCtxFactory parameters for balance queries
 func NewBackend(
 	ctx *server.Context,
 	logger log.Logger,
@@ -156,6 +160,7 @@ func NewBackend(
 	indexer cosmosevmtypes.EVMTxIndexer,
 	bankKeeper cmn.BankKeeper,
 	baseDenom string,
+	queryCtxFactory QueryContextFactory,
 ) *Backend {
 	appConf, err := config.GetConfig(ctx.Viper)
 	if err != nil {
@@ -177,7 +182,8 @@ func NewBackend(
 		cfg:                 appConf,
 		allowUnprotectedTxs: allowUnprotectedTxs,
 		indexer:             indexer,
-		bankKeeper:          bankKeeper, // ELYS MODIFICATION: Store bank keeper
-		baseDenom:           baseDenom,  // ELYS MODIFICATION: Store base denomination
+		bankKeeper:          bankKeeper,        // ELYS MODIFICATION: Store bank keeper
+		baseDenom:           baseDenom,         // ELYS MODIFICATION: Store base denomination
+		queryCtxFactory:     queryCtxFactory,  // ELYS MODIFICATION: Store query context factory
 	}
 }

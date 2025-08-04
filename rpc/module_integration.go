@@ -15,9 +15,9 @@ import (
 //	// After BankKeeper is initialized
 //	rpc.SetupEVMRPC(app.BankKeeper)
 //
-// SetupEVMRPC configures the EVM RPC with bank keeper and base denomination
-// ELYS MODIFICATION: Enhanced to accept base denomination for proper configuration
-func SetupEVMRPC(bankKeeper cmn.BankKeeper, baseDenom string) error {
+// SetupEVMRPC configures the EVM RPC with bank keeper, base denomination, and context factory
+// ELYS MODIFICATION: Enhanced to accept query context factory for direct keeper calls
+func SetupEVMRPC(bankKeeper cmn.BankKeeper, baseDenom string, queryCtxFactory QueryContextFactory) error {
 	// Validate inputs
 	if bankKeeper == nil {
 		return fmt.Errorf("bank keeper cannot be nil")
@@ -27,10 +27,15 @@ func SetupEVMRPC(bankKeeper cmn.BankKeeper, baseDenom string) error {
 		return fmt.Errorf("base denomination cannot be empty")
 	}
 	
+	if queryCtxFactory == nil {
+		return fmt.Errorf("query context factory cannot be nil")
+	}
+	
 	// Set the global RPC configuration
 	config := &RPCConfig{
-		BankKeeper: bankKeeper,
-		BaseDenom:  baseDenom,
+		BankKeeper:          bankKeeper,
+		BaseDenom:           baseDenom,
+		QueryContextFactory: queryCtxFactory,
 	}
 	
 	SetRPCConfig(config)
