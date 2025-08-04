@@ -181,11 +181,24 @@ func (b *Backend) GetBalance(address common.Address, blockNrOrHash rpctypes.Bloc
     cosmosAddr := sdk.AccAddress(address.Bytes())
     fmt.Printf("✅ Converted to cosmos address: %s\n", cosmosAddr.String())
 
-    // Create context with the correct height
-    rpcCtx := rpctypes.ContextWithHeight(blockNum.Int64())
+    // Try to create a context that has proper store access for direct keeper calls
+    // rpctypes.ContextWithHeight might not have the stores needed for bank keeper
+    fmt.Printf("🔍 Creating context for height: %d\n", blockNum.Int64())
+    
+    // First try the standard RPC context
+    queryCtx := rpctypes.ContextWithHeight(blockNum.Int64())
+    fmt.Printf("✅ RPC context created successfully\n")
+    
+    // TODO: If this hangs, we need to create a proper SDK context with store access
+    // The issue is that bank keeper needs access to the KVStore which rpctypes.ContextWithHeight might not provide
+    
+    fmt.Printf("✅ Using context with height: %d\n", blockNum.Int64())
+    fmt.Printf("🔍 About to call GetBalance on bank keeper...\n")
 
     // Query bank module for native token balance
-    balance := b.bankKeeper.GetBalance(rpcCtx, cosmosAddr, b.baseDenom)
+    balance := b.bankKeeper.GetBalance(queryCtx, cosmosAddr, b.baseDenom)
+    
+    fmt.Printf("✅ GetBalance call completed\n")
     val := balance.Amount
     
     fmt.Printf("✅ Bank balance found: %s %s\n", val.String(), b.baseDenom)
