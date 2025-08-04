@@ -1,7 +1,6 @@
 package backend
 
 import (
-	"context"
 	"fmt"
 	"math"
 	"math/big"
@@ -182,40 +181,24 @@ func (b *Backend) GetBalance(address common.Address, blockNrOrHash rpctypes.Bloc
     cosmosAddr := sdk.AccAddress(address.Bytes())
     fmt.Printf("✅ Converted to cosmos address: %s\n", cosmosAddr.String())
 
-    // Create a proper SDK context with store access for direct keeper calls
-    // rpctypes.ContextWithHeight doesn't work for direct keeper calls - only for gRPC queries
-    fmt.Printf("🔍 Creating proper SDK context for height: %d\n", blockNum.Int64())
-    
-    // Use the backend's base context and set the height
-    ctx := b.ctx  // Use the backend's context
-    if ctx == nil {
-        fmt.Printf("⚠️ Backend context is nil, using a background context\n")
-        ctx = context.Background()
-    }
-    
-    // For now, let's try using the latest block context since height-specific queries are failing
-    // We'll use rpctypes.ContextWithHeight(0) which should use latest
-    queryCtx := rpctypes.ContextWithHeight(0) // 0 = latest block
-    fmt.Printf("✅ Using latest block context instead of specific height\n")
-    
-    fmt.Printf("✅ Using context with height: %d\n", blockNum.Int64())
-    fmt.Printf("🔍 About to call GetBalance on bank keeper...\n")
-    
-    // Try direct keeper call with panic recovery
-    var val sdkmath.Int
-    
-    // Attempt direct keeper call with panic recovery
-    defer func() {
-        if r := recover(); r != nil {
-            fmt.Printf("⚠️ Direct keeper call panicked: %v\n", r)
-            // TODO: Implement gRPC fallback here if needed
-        }
-    }()
-    
-    // Try the direct keeper approach
-    balance := b.bankKeeper.GetBalance(queryCtx, cosmosAddr, b.baseDenom)
-    val = balance.Amount
-    fmt.Printf("✅ Direct bank keeper call successful: %s %s\n", val.String(), b.baseDenom)
+    	// The key fix: Use the backend's clientCtx to get a proper SDK context
+	fmt.Printf("🔍 Creating proper SDK context...\n")
+	
+	// Create a context with height for gRPC queries
+	grpcCtx := rpctypes.ContextWithHeight(blockNum.Int64())
+	
+	// Extract the SDK context from the gRPC context
+	// This is the same pattern used in gRPC query handlers
+	ctx := sdk.UnwrapSDKContext(grpcCtx)
+	
+	fmt.Printf("✅ Created SDK context with height: %d\n", blockNum.Int64())
+	fmt.Printf("🔍 About to call GetBalance on bank keeper...\n")
+
+	// Query bank module for native token balance
+	balance := b.bankKeeper.GetBalance(ctx, cosmosAddr, b.baseDenom)
+	val := balance.Amount
+	
+	fmt.Printf("✅ Bank balance found: %s %s\n", val.String(), b.baseDenom)
 
     if val.IsNegative() {
         return nil, errors.New("couldn't fetch balance. Node state is pruned")
