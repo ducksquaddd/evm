@@ -207,7 +207,12 @@ func (b *Backend) GetBalance(address common.Address, blockNrOrHash rpctypes.Bloc
 			return nil, errors.New("couldn't fetch balance. Node state is pruned")
 		}
 		
-		return (*hexutil.Big)(val.BigInt()), nil
+		// ELYS SCALING: Apply same scaling to EVM fallback for consistency
+		scalingFactor := sdkmath.NewIntFromBigInt(new(big.Int).Exp(big.NewInt(10), big.NewInt(12), nil)) // 10^12
+		scaledVal := val.Mul(scalingFactor)
+		fmt.Printf("🔄 Scaled EVM balance for MetaMask: %s (added 12 zeros)\n", scaledVal.String())
+		
+		return (*hexutil.Big)(scaledVal.BigInt()), nil
 	}
 	
 	// Create proper SDK context for the specific height
@@ -217,13 +222,21 @@ func (b *Backend) GetBalance(address common.Address, blockNrOrHash rpctypes.Bloc
 	// Direct bank keeper call (fast, no gRPC overhead)
 	balance := b.bankKeeper.GetBalance(queryCtx, cosmosAddr, b.baseDenom)
 	val := balance.Amount
-	fmt.Printf("✅ Bank balance found via direct keeper call: %s %s\n", val.String(), b.baseDenom)
+	fmt.Printf("✅ Bank balance found via direct keeper call: %s %s (raw)\n", val.String(), b.baseDenom)
 
     if val.IsNegative() {
         return nil, errors.New("couldn't fetch balance. Node state is pruned")
     }
 
-    return (*hexutil.Big)(val.BigInt()), nil
+    // ELYS SCALING: Convert 6-decimal ELYS to 18-decimal for MetaMask compatibility
+    // MetaMask expects 18 decimals for native tokens, but ELYS uses 6 decimals
+    // So we multiply by 10^12 to add the missing 12 decimal places
+    scalingFactor := sdkmath.NewIntFromBigInt(new(big.Int).Exp(big.NewInt(10), big.NewInt(12), nil)) // 10^12
+    scaledVal := val.Mul(scalingFactor)
+    
+    fmt.Printf("🔄 Scaled balance for MetaMask: %s (added 12 zeros)\n", scaledVal.String())
+
+    return (*hexutil.Big)(scaledVal.BigInt()), nil
 }
 
 // GetTransactionCount returns the number of transactions at the given address up to the given block number.
